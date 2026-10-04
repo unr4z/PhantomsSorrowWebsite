@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Phantom's Sorrow — Kizuki Custom</title>
+  <meta name="description" content="Phantom's Sorrow — a custom weapon in Kizuki. A blade long shattered, yet never truly broken." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,500;0,600;1,400;1,500&family=Space+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+  <canvas id="fire" aria-hidden="true"></canvas>
+  <div class="emberglow" aria-hidden="true"></div>
+  <div class="fog" aria-hidden="true"></div>
+  <div class="veil" aria-hidden="true"></div>
+  <div class="mist" aria-hidden="true"></div>
+  <div class="mist mist2" aria-hidden="true"></div>
+  <div class="breath" aria-hidden="true"></div>
+  <div class="vignette" aria-hidden="true"></div>
+  <div class="flicker" aria-hidden="true"></div>
+  <div class="mist-fg" aria-hidden="true"></div>
+  <div class="mist-fg mist-fg2" aria-hidden="true"></div>
+  <div class="scene-dim" aria-hidden="true"></div>
+
+  <header class="topbar" id="topbar">
+    <button class="brand" data-page="home" aria-label="Phantom's Sorrow — home">
+      <img class="brand-emblem" src="assets/img/skull.png" alt="" aria-hidden="true" />
+      <span class="brand-name">Phantom's Sorrow</span>
+    </button>
+    <nav class="topnav" aria-label="Primary">
+      <button class="navlink is-active" data-page="home">Home</button>
+      <button class="navlink" data-page="lore">Lore</button>
+      <button class="navlink" data-page="concept">Concept</button>
+      <button class="navlink" data-page="holders">Holders</button>
+      <button class="navlink" data-page="title">Title</button>
+      <button class="navlink" data-page="changelog">Changelog</button>
+    </nav>
+    <button class="nav-toggle" id="navToggle" aria-label="Menu" aria-expanded="false"><span></span><span></span><span></span></button>
+  </header>
+
+  <main>
+    <!-- ============ HOME ============ -->
+    <section class="page is-active" id="page-home">
+      <div class="hero">
+        <div class="hero-inner">
+          <figure class="hero-sword hero-skull" id="homeSkull"><img src="assets/img/skull.png" alt="Phantom's Sorrow emblem" /></figure>
+          <p class="kicker">Kizuki Custom</p>
+          <h1 class="hero-title">Phantom's Sorrow</h1>
+          <p class="hero-tag">A blade long shattered, yet never truly broken.</p>
+        </div>
+      </div>
+
+      <div class="wrap">
+        <div class="portal-grid">
+          <button class="portal" data-page="lore"><h3>Lore</h3><p>The story behind the blade.</p></button>
+          <button class="portal" data-page="concept"><h3>Concept</h3><p>Progress on the build.</p></button>
+          <button class="portal" data-page="holders"><h3>Holders</h3><p>Who wields it.</p></button>
+          <button class="portal" data-page="changelog"><h3>Changelog</h3><p>Track every update.</p></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ LORE ============ -->
+    <section class="page" id="page-lore" hidden>
+      <div class="subhero">
+        <div class="wrap">
+          <p class="kicker">Story</p>
+          <h1 class="page-title">Lore</h1>
+          <p class="page-sub">The story behind the blade.</p>
+          <span class="rule"></span>
+          <div class="prose" id="lore-text"><!-- rendered --></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CONCEPT ============ -->
+    <section class="page" id="page-concept" hidden>
+      <div class="subhero">
+        <div class="wrap">
+          <h1 class="page-title concept-maintitle">Concept</h1>
+          <div class="ornament">✦</div>
+          <p class="concept-intro">This page explores the ideas, concepts, and design decisions that shaped the weapon's appearance, movement, and identity into what it is today.</p>
+          <div class="ornament">✦</div>
+
+          <div class="concept-grid">
+            <div class="concept-col">
+              <h3 class="concept-h"><span class="cnum">[ 01 ]</span> Visual Foundation</h3>
+              <figure class="concept-img"><button class="zoom" data-src="assets/img/concept-sword.png"><img src="assets/img/concept-sword.png" alt="Phantom's Sorrow — original concept" loading="lazy"/></button></figure>
+              <p>The original concept established the direction for Phantom's Sorrow and introduced the spectral identity the weapon still carries today. It never quite felt finished, so instead of continuing to tweak it, the model was rebuilt from the ground up into the version seen today.</p>
+
+              <div class="ornament">✦</div>
+              <h3 class="concept-h"><span class="cnum">[ 05 ]</span> Icon</h3>
+              <figure class="concept-img"><button class="zoom" data-src="assets/img/concept-icon.png"><img src="assets/img/concept-icon.png" alt="Phantom's Sorrow icon" loading="lazy"/></button></figure>
+            </div>
+
+            <div class="concept-col">
+              <h3 class="concept-h"><span class="cnum">[ 02 ]</span> Animation Exploration</h3>
+              <p>A variety of animation concepts were explored during the early design process to better define how Phantom's Sorrow should feel in motion. The original ideas ranged from a planted/leaning idle pose and ground-dragging movement to a segmented blocking animation that surrounded the wielder. Some concepts were refined, others were set aside, but each played a part in shaping the weapon's final identity and the way it conveys weight, momentum, and an almost unnatural presence.</p>
+              <div class="ornament">✦</div>
+              <h3 class="concept-h"><span class="cnum">[ 03 ]</span> Spectral Identity</h3>
+              <p>More than just its appearance, Phantom's Sorrow was designed around a single idea: a weapon with a will of its own. Every concept explored throughout development was created to reinforce that feeling. The spectral flames, transparency effects, segmented parts, and visual effects were all designed to support the same identity, making the blade feel as though a lingering spirit was always present.</p>
+              <p>The goal was to create a blade that didn't simply follow its wielder, but instead felt as though it had intentions of its own. Every concept was designed to reinforce that feeling, making Phantom's Sorrow feel less like an object and more like a presence.</p>
+              <div class="ornament">✦</div>
+              <h3 class="concept-h"><span class="cnum">[ 04 ]</span> Origins</h3>
+              <p>The idea behind Phantom's Sorrow began years before the weapon had an official design in mind. Early designs were built around the idea of a segmented blade and were inspired by weapons and mechanics that stood out compared to others. Although those early ideas never became a finished project, they laid the foundations for what eventually became Phantom's Sorrow, proving that even unfinished concepts can grow into something entirely their own.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ HOLDERS ============ -->
+    <section class="page" id="page-holders" hidden>
+      <div class="subhero">
+        <div class="wrap">
+          <p class="kicker">Wielders</p>
+          <h1 class="page-title">Holder List</h1>
+          <p class="page-sub">Passing the blade on is a rare thing, granted only under exceptional circumstances — the few deemed worthy carry it, and the rest are met with silence.</p>
+          <span class="rule"></span>
+
+          <h2 class="band">-[ Owner ]-</h2>
+          <div class="people-grid" id="owner"><!-- rendered --></div>
+
+          <h2 class="band">-[ Developers / Contributors ]-</h2>
+          <div class="people-grid" id="contributors"><!-- rendered --></div>
+
+          <h2 class="band band-alt">-[ Temporary Holders ]-</h2>
+          <div class="temp-line">
+            <p>Recognized for a time — until the blade chooses another. Earned through the "Blade's Judgement" trials.</p>
+            <button class="btn-learn" data-page="challenge">Learn More →</button>
+          </div>
+
+          <h2 class="band band-danger">-[ Blacklist ]-</h2>
+          <div class="people-grid" id="blacklist"><!-- rendered --></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== SECRET: the challenge (only reachable via "Learn More") ===== -->
+    <section class="page" id="page-challenge" hidden>
+      <div class="wrap challenge-wrap">
+        <button class="btn-back" data-page="holders">← Back to Holders</button>
+        <div class="challenge-grid">
+          <div class="challenge-left">
+            <h1 class="page-title ch-title">Temp<br>Holders</h1>
+            <div class="ornament">✦</div>
+            <p class="ch-quote">Recognized for a time. Until the blade chooses another.</p>
+            <p class="ch-sub">Earned by completing the "Blade's Judgement" challenges.</p>
+            <div class="ornament">✦</div>
+            <div class="registry">
+              <h4>Registry</h4>
+              <table>
+                <tbody>
+                  <tr><td>Current Holders</td><td class="reg-green">00</td></tr>
+                  <tr><td>Trial Difficulty</td><td class="reg-gold">Extreme</td></tr>
+                  <tr><td>Status</td><td class="reg-red">Coming Soon</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="challenge-right">
+            <p>Join the Roblox Group to see what you have to do to become a temp holder.</p>
+            <a class="big-link" href="https://www.roblox.com/communities/32515745/The-Phantom-Covenant#!/about" target="_blank" rel="noopener">The Phantom Covenant — Roblox</a>
+            <p>Whenever you switch a weapon as a temp holder, it is removed from your inventory. You can ask for it back whenever, as long as you have completed the challenges.</p>
+            <h2 class="challenge-heading">THE CHALLENGE</h2>
+            <p class="muted ch-soon">Challenge details coming soon.</p>
+          </div>
+        </div>
+
+        <h2 class="band band-alt ch-temp-band">-[ Temporary Holders ]-</h2>
+        <div class="people-grid" id="temp-holders"><!-- rendered --></div>
+      </div>
+    </section>
+
+    <!-- ============ TITLE ============ -->
+    <section class="page" id="page-title" hidden>
+      <div class="subhero">
+        <div class="wrap">
+          <div class="title-crest">
+            <div class="crest-badge" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6Z"/><path d="m9 12 2 2 4-4"/></svg>
+            </div>
+            <p class="kicker">The Title of Phantom's Sorrow</p>
+            <h1 class="title-name">Soulbound</h1>
+            <p class="title-desc">A mark worn by those tied to the blade — the ones who carry its spectral flame, and the ones who helped forge it.</p>
+          </div>
+
+          <h2 class="band">-[ How it's earned ]-</h2>
+          <div class="earn-grid">
+            <article class="earn">
+              <span class="earn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m4 15 4-10 4 6 4-6 4 10Z"/><path d="M4 15h16v4H4z"/></svg></span>
+              <h3>Own a copy</h3>
+              <p>Hold a copy of <strong>Phantom's Sorrow</strong> and the title is bound to you.</p>
+            </article>
+            <article class="earn">
+              <span class="earn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.3L3 18v3h3l6.4-6.4a4 4 0 0 0 5.3-5.4l-2.6 2.6-2.1-.5-.5-2.1 2.6-2.6Z"/></svg></span>
+              <h3>Contribute</h3>
+              <p>Help create the custom through design, VFX, sound, or more to earn it by craft.</p>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CHANGELOG ============ -->
+    <section class="page" id="page-changelog" hidden>
+      <div class="subhero">
+        <div class="wrap">
+          <p class="kicker">Updates</p>
+          <h1 class="page-title">Changelog</h1>
+          <p class="page-sub">Every pass, tweak, and rework — in order.</p>
+          <span class="rule"></span>
+
+          <div class="progress-card">
+            <span class="status-pill"><i></i> In development</span>
+            <div class="bars" id="progress-bars"><!-- rendered --></div>
+          </div>
+
+          <ol class="timeline" id="timeline"><!-- rendered --></ol>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p class="foot-mark">Phantom's Sorrow</p>
+    <p class="foot-note">A community showcase for a custom weapon in the Roblox game <strong>Kizuki</strong>. Part of <strong>Sammy's Projects</strong>.</p>
+  </footer>
+
+  <button class="sound-toggle" id="soundToggle" aria-label="Toggle sound" aria-pressed="false" title="Sound on/off">
+    <svg class="ic-sound-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+    <svg class="ic-sound-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" hidden><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m17 9 4 4M21 9l-4 4"/></svg>
+  </button>
+
+  <!-- the gate behind the skull -->
+  <div class="voidgate" id="voidgate" hidden>
+    <canvas id="vgfire" aria-hidden="true"></canvas>
+    <div class="vg-vig" aria-hidden="true"></div>
+    <div class="vg-stage">
+      <img class="vg-skull" src="assets/img/skull.png" alt="" />
+      <h2 class="vg-line">You shouldn't have clicked that.</h2>
+      <p class="vg-sub">It knows your name now.</p>
+      <button class="vg-close" id="vgClose">close the door</button>
+    </div>
+  </div>
+
+  <div class="lightbox" id="lightbox" hidden>
+    <button class="lb-close" id="lbClose" aria-label="Close">×</button>
+    <img id="lbImg" alt="" />
+  </div>
+
+  <script src="assets/js/main.js" defer></script>
+</body>
+</html>
