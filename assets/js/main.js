@@ -206,7 +206,11 @@ const SFX = (() => {
   let ctx, master;
   function ensure() { if (!ctx) { const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null; ctx = new AC(); master = ctx.createGain(); master.gain.value = 0.5; master.connect(ctx.destination); } if (ctx.state === "suspended") ctx.resume(); return ctx; }
   function blip(f, d, v, t = "sine") { const c = ensure(); if (!c) return; const n = c.currentTime, o = c.createOscillator(), g = c.createGain(); o.type = t; o.frequency.setValueAtTime(f, n); o.frequency.exponentialRampToValueAtTime(Math.max(60, f * 0.72), n + d); g.gain.setValueAtTime(0.0001, n); g.gain.exponentialRampToValueAtTime(v, n + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, n + d); o.connect(g).connect(master); o.start(n); o.stop(n + d + 0.02); }
-  return { tap() { blip(500, 0.07, 0.1, "triangle"); }, confirm() { blip(660, 0.08, 0.12, "sine"); setTimeout(() => blip(990, 0.07, 0.06, "sine"), 42); } };
+  // spectral clicks — low & descending, distinct from the Aether site
+  return {
+    tap() { blip(280, 0.1, 0.08, "sine"); },
+    confirm() { blip(470, 0.12, 0.1, "sine"); setTimeout(() => blip(300, 0.16, 0.07, "triangle"), 60); },
+  };
 })();
 function initSfx() {
   document.addEventListener("click", (e) => {
