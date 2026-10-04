@@ -205,11 +205,28 @@ function initLightbox() {
 const SFX = (() => {
   let ctx, master;
   function ensure() { if (!ctx) { const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null; ctx = new AC(); master = ctx.createGain(); master.gain.value = 0.5; master.connect(ctx.destination); } if (ctx.state === "suspended") ctx.resume(); return ctx; }
-  function blip(f, d, v, t = "sine") { const c = ensure(); if (!c) return; const n = c.currentTime, o = c.createOscillator(), g = c.createGain(); o.type = t; o.frequency.setValueAtTime(f, n); o.frequency.exponentialRampToValueAtTime(Math.max(60, f * 0.72), n + d); g.gain.setValueAtTime(0.0001, n); g.gain.exponentialRampToValueAtTime(v, n + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, n + d); o.connect(g).connect(master); o.start(n); o.stop(n + d + 0.02); }
-  // spectral clicks — low & descending, distinct from the Aether site
+  // a short band-passed noise burst — an airy, breathy "whisper" (no clean tone)
+  function whisper(freq, q, d, v) {
+    const c = ensure(); if (!c) return; const n = c.currentTime;
+    const len = Math.ceil(c.sampleRate * d), buf = c.createBuffer(1, len, c.sampleRate), ch = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) ch[i] = (Math.random() * 2 - 1);
+    const src = c.createBufferSource(); src.buffer = buf;
+    const bp = c.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.setValueAtTime(freq, n); bp.frequency.exponentialRampToValueAtTime(freq * 0.55, n + d); bp.Q.value = q;
+    const g = c.createGain(); g.gain.setValueAtTime(0.0001, n); g.gain.exponentialRampToValueAtTime(v, n + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, n + d);
+    src.connect(bp).connect(g).connect(master); src.start(n); src.stop(n + d + 0.02);
+  }
+  // a hollow, slow-swelling ghost tone — two detuned sines under a lowpass sweep
+  function swell(freq, d, v) {
+    const c = ensure(); if (!c) return; const n = c.currentTime;
+    const lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.setValueAtTime(freq * 1.2, n); lp.frequency.exponentialRampToValueAtTime(freq * 4, n + d * 0.5); lp.Q.value = 6;
+    const g = c.createGain(); g.gain.setValueAtTime(0.0001, n); g.gain.exponentialRampToValueAtTime(v, n + d * 0.45); g.gain.exponentialRampToValueAtTime(0.0001, n + d);
+    lp.connect(g).connect(master);
+    [freq, freq * 1.009].forEach((f, i) => { const o = c.createOscillator(); o.type = "sine"; o.frequency.setValueAtTime(f, n); o.connect(lp); o.start(n); o.stop(n + d + 0.02); });
+  }
+  // spectral UI — breathy whispers & a hollow swell, nothing like the Aether plucks
   return {
-    tap() { blip(280, 0.1, 0.08, "sine"); },
-    confirm() { blip(470, 0.12, 0.1, "sine"); setTimeout(() => blip(300, 0.16, 0.07, "triangle"), 60); },
+    tap() { whisper(1600, 7, 0.07, 0.12); },
+    confirm() { whisper(1300, 6, 0.06, 0.1); swell(150, 0.5, 0.09); },
   };
 })();
 function initSfx() {
