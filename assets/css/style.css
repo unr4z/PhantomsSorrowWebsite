@@ -545,6 +545,22 @@ body.blackout .page.is-active .title-name {
   .earn-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 500px) { .portal-grid { grid-template-columns: 1fr; } }
+
+/* --- mobile performance: trim the heavy full-screen blur/filter layers --- */
+@media (max-width: 820px), (pointer: coarse) {
+  /* fixed background attachment is a major cause of scroll jank on phones */
+  body { background-attachment: scroll; }
+  /* drop the foreground + secondary blurred, animated layers (the biggest GPU cost) */
+  .mist-fg, .mist-fg2, .mist2, .fog, .veil { display: none; }
+  /* keep one mist layer but far cheaper to composite */
+  .mist { filter: blur(16px); animation-duration: 60s; }
+  .emberglow { animation: none; opacity: .85; }
+  /* backdrop-filter blur is expensive to repaint while scrolling — use a solid bar instead */
+  .topbar { backdrop-filter: none; background: rgba(5,10,7,.94); }
+  .topbar.is-scrolled { background: rgba(5,10,7,.97); }
+  /* the breathing/flicker overlays add constant repaints for little gain on small screens */
+  .breath, .flicker { display: none; }
+}
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; }
   .band { background: none; -webkit-text-fill-color: currentColor; }

@@ -59,8 +59,8 @@ const data = {
 
   timeline: [
     { ver: "v0.1", year: "2023", notes: ["Initial concept artwork created.", "First model completed.", "Concept artwork redesigned."] },
-    { ver: "v0.2", year: "2025", notes: ["Final model completed.", "Animation production began and completed."] },
-    { ver: "v0.3", year: "2026", notes: ["VFX production began and completed."] },
+    { ver: "v0.2", year: "2025", notes: ["Final model completed.", "Initial animation production began and completed."] },
+    { ver: "v0.3", year: "2026", notes: ["VFX production began and completed.", "Temporary SFX began and completed."] },
   ],
 };
 
@@ -223,10 +223,18 @@ const SFX = (() => {
     lp.connect(g).connect(master);
     [freq, freq * 1.009].forEach((f, i) => { const o = c.createOscillator(); o.type = "sine"; o.frequency.setValueAtTime(f, n); o.connect(lp); o.start(n); o.stop(n + d + 0.02); });
   }
-  // spectral UI — breathy whispers & a hollow swell, nothing like the Aether plucks
+  // a soft downward wail — a ghostly, ghastly moan (two detuned sines gliding down, veiled)
+  function moan(f0, f1, d, v) {
+    const c = ensure(); if (!c) return; const n = c.currentTime;
+    const lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 820; lp.Q.value = 2;
+    const g = c.createGain(); g.gain.setValueAtTime(0.0001, n); g.gain.exponentialRampToValueAtTime(v, n + d * 0.3); g.gain.exponentialRampToValueAtTime(0.0001, n + d);
+    g.connect(lp).connect(master);
+    [1, 1.006].forEach((m) => { const o = c.createOscillator(); o.type = "sine"; o.frequency.setValueAtTime(f0 * m, n); o.frequency.exponentialRampToValueAtTime(Math.max(40, f1) * m, n + d); o.connect(g); o.start(n); o.stop(n + d + 0.03); });
+  }
+  // spectral UI — breathy whispers + a ghostly wail, nothing like the Aether plucks
   return {
-    tap() { whisper(1600, 7, 0.07, 0.12); },
-    confirm() { whisper(1300, 6, 0.06, 0.1); swell(150, 0.5, 0.09); },
+    tap() { whisper(1500, 8, 0.07, 0.09); moan(300, 170, 0.28, 0.05); },
+    confirm() { whisper(1250, 6, 0.07, 0.08); moan(250, 120, 0.5, 0.07); swell(140, 0.5, 0.05); },
   };
 })();
 function initSfx() {
@@ -236,26 +244,41 @@ function initSfx() {
   }, true);
 }
 
+/* ---------- shared helper: a soft glow sprite per colour (replaces costly per-particle shadowBlur) ---------- */
+function glowSprites(colorList, size = 26) {
+  return colorList.map((c) => {
+    const s = document.createElement("canvas"); s.width = s.height = size;
+    const g = s.getContext("2d");
+    const rad = g.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+    rad.addColorStop(0, `rgba(${c},1)`); rad.addColorStop(0.35, `rgba(${c},0.55)`); rad.addColorStop(1, `rgba(${c},0)`);
+    g.fillStyle = rad; g.fillRect(0, 0, size, size);
+    return s;
+  });
+}
+const LOW_FX = matchMedia("(pointer: coarse)").matches || innerWidth < 820;
+
 /* ---------- FIRE background (green fire particles across the whole screen) ---------- */
 function initFire() {
   const canvas = $("#fire");
   if (!canvas || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   const ctx = canvas.getContext("2d");
-  let w, h, parts;
+  let w, h, parts, wisps, shadows;
   const colors = ["38,227,154", "120,240,180", "228,198,122", "90,230,170", "160,255,205"]; // greens + gold
+  const sprites = glowSprites(colors);
 
-  let wisps, shadows;
   function resize() {
     w = canvas.width = innerWidth; h = canvas.height = innerHeight;
-    parts = Array.from({ length: Math.min(150, Math.floor(w * h / 11000)) }, () => spawn(true));
-    wisps = Array.from({ length: Math.max(3, Math.round(w / 520)) }, () => ({
+    // far fewer particles on phones/tablets; no shadowBlur anywhere
+    const div = LOW_FX ? 44000 : 13000, cap = LOW_FX ? 36 : 110;
+    parts = Array.from({ length: Math.min(cap, Math.floor(w * h / div)) }, () => spawn(true));
+    wisps = Array.from({ length: LOW_FX ? 2 : Math.max(3, Math.round(w / 560)) }, () => ({
       x: Math.random() * w, y: Math.random() * h,
       r: Math.random() * 160 + 120,
       vx: (Math.random() - 0.5) * 0.22, vy: (Math.random() - 0.5) * 0.14,
       a: Math.random() * 0.05 + 0.025, t: Math.random() * Math.PI * 2, tw: Math.random() * 0.01 + 0.004,
     }));
     // dark drifting shadow masses — looming presences
-    shadows = Array.from({ length: Math.max(3, Math.round(w / 620)) }, () => ({
+    shadows = Array.from({ length: LOW_FX ? 2 : Math.max(3, Math.round(w / 620)) }, () => ({
       x: Math.random() * w, y: Math.random() * h,
       r: Math.random() * 260 + 200,
       vx: (Math.random() - 0.5) * 0.16, vy: (Math.random() - 0.5) * 0.1,
@@ -272,7 +295,7 @@ function initFire() {
       vy: -(Math.random() * 0.6 + 0.15),            // gentle upward drift
       vx: (Math.random() - 0.5) * 0.5,
       a: Math.random() * 0.5 + 0.25,
-      c: colors[(Math.random() * colors.length) | 0],
+      ci: (Math.random() * colors.length) | 0,
       sway: Math.random() * 0.04 + 0.015,
       amp: Math.random() * 0.8 + 0.3,
       t: Math.random() * Math.PI * 2,
@@ -281,7 +304,11 @@ function initFire() {
     };
   }
 
-  function frame() {
+  let last = 0;
+  function frame(ts) {
+    requestAnimationFrame(frame);
+    if (LOW_FX && ts - last < 32) return;    // cap to ~30fps on mobile
+    last = ts;
     ctx.clearRect(0, 0, w, h);
 
     // dark shadow masses first (they darken the background)
@@ -318,17 +345,13 @@ function initFire() {
       if (p.y < -10 || p.life <= 0) Object.assign(p, spawn(false)); // respawn at bottom, rise again
       const flick = 0.35 + Math.abs(Math.sin(p.t * 2.2)) * 0.65;    // flame-like flicker
       const alpha = p.a * flick * Math.max(0, Math.min(1, p.life * 1.4));
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(${p.c}, ${alpha})`;
-      ctx.shadowBlur = 12;
-      ctx.shadowColor = `rgba(${p.c}, 0.9)`;
-      ctx.fill();
+      const size = p.r * 7;                          // sprite carries the glow (no shadowBlur)
+      ctx.globalAlpha = alpha;
+      ctx.drawImage(sprites[p.ci], p.x - size / 2, p.y - size / 2, size, size);
     }
-    ctx.globalCompositeOperation = "source-over"; ctx.shadowBlur = 0;
-    requestAnimationFrame(frame);
+    ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over";
   }
-  resize(); addEventListener("resize", resize); frame();
+  resize(); addEventListener("resize", resize); requestAnimationFrame(frame);
 }
 
 /* ---------- eerie ambient + lights-out drone (synthesized) ---------- */
@@ -438,34 +461,62 @@ const Ambience = (() => {
     g.gain.exponentialRampToValueAtTime(0.0001, t + 0.07);
     o.connect(g).connect(master); o.start(t); o.stop(t + 0.09);
   }
-  // hover music — Faceless Beast, begins at 1:01, loops, fades in/out, remembers its position
-  let hA, hGain, hStarted = false, hPauseTimer = null, hBound = false;
-  const H_START = 61;
+  // owner hover theme — a fully synthesized eerie ambient (no copyrighted audio):
+  // a dark minor drone with a slow filter sweep, airy wind, and sparse haunting notes.
+  let hGain, hActive = false, hNodes = [], hMel = null, hStopTimer = null;
+  const MEL = [0, 3, 5, 7, 10, 12, 15];   // minor-pentatonic flavoured offsets
+  const MEL_BASE = 174.6;                  // F3 — low and mournful
   function hoverEnsure() {
-    if (hA) return; if (!ensure()) return;
-    hA = new Audio("assets/audio/faceless-beast.mp3"); hA.preload = "auto";
+    if (hGain) return; if (!ensure()) return;
     hGain = ctx.createGain(); hGain.gain.value = 0; hGain.connect(master);
-    try { ctx.createMediaElementSource(hA).connect(hGain); hBound = true; } catch (e) { hBound = false; }
-    hA.addEventListener("timeupdate", () => {
-      if (hA.duration && hA.currentTime >= hA.duration - 0.3) hA.currentTime = H_START;
+  }
+  function startDrone() {
+    const t = ctx.currentTime;
+    const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 480; lp.Q.value = 5; lp.connect(hGain);
+    const lfo = ctx.createOscillator(); lfo.frequency.value = 0.05;
+    const lg = ctx.createGain(); lg.gain.value = 220;
+    lfo.connect(lg).connect(lp.frequency); lfo.start(t); hNodes.push(lfo);
+    [43.65, 44.0, 65.4, 87.3].forEach((f, i) => {   // F1-ish cluster + fifth
+      const o = ctx.createOscillator(); o.type = i < 2 ? "sine" : "triangle"; o.frequency.value = f;
+      const g = ctx.createGain(); g.gain.value = i < 2 ? 0.5 : 0.14;
+      o.connect(g).connect(lp); o.start(t); hNodes.push(o);
+    });
+    const src = ctx.createBufferSource(); src.buffer = noiseBuffer(5); src.loop = true;
+    const bp = ctx.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 1100; bp.Q.value = 0.5;
+    const ng = ctx.createGain(); ng.gain.value = 0.02;
+    src.connect(bp).connect(ng).connect(hGain); src.start(t); hNodes.push(src);
+  }
+  function pluck() {
+    if (!ctx) return; const t = ctx.currentTime;
+    const semi = MEL[(Math.random() * MEL.length) | 0];
+    const f = MEL_BASE * Math.pow(2, semi / 12);
+    const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 2400; lp.connect(hGain);
+    const g = ctx.createGain(); g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.10, t + 0.05);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 2.4); g.connect(lp);
+    [[f, "triangle", 1], [f * 2, "sine", 0.4]].forEach(([fr, ty, amt]) => {
+      const o = ctx.createOscillator(); o.type = ty; o.frequency.value = fr;
+      const og = ctx.createGain(); og.gain.value = amt; o.connect(og).connect(g);
+      o.start(t); o.stop(t + 2.5);
     });
   }
   function hoverIn() {
     if (!ensure()) return; hoverEnsure();
     if (ctx.state === "suspended") ctx.resume();
-    clearTimeout(hPauseTimer);
-    if (!hStarted) { try { hA.currentTime = H_START; } catch (e) {} hStarted = true; }
-    if (!hBound) hA.volume = muted ? 0 : 1;
-    hA.play().catch(() => {});
+    clearTimeout(hStopTimer);
+    if (!hActive) { hActive = true; startDrone(); hMel = setInterval(() => { if (Math.random() < 0.72) pluck(); }, 1500); }
     const t = ctx.currentTime;
     hGain.gain.cancelScheduledValues(t); hGain.gain.setValueAtTime(hGain.gain.value, t);
-    hGain.gain.linearRampToValueAtTime(0.17, t + 1.3);
+    hGain.gain.linearRampToValueAtTime(0.32, t + 1.3);
   }
   function hoverOut() {
     if (!hGain) return; const t = ctx.currentTime;
     hGain.gain.cancelScheduledValues(t); hGain.gain.setValueAtTime(hGain.gain.value, t);
     hGain.gain.linearRampToValueAtTime(0, t + 1.1);
-    hPauseTimer = setTimeout(() => { try { hA.pause(); } catch (e) {} }, 1200); // pause keeps position
+    hStopTimer = setTimeout(() => {
+      hActive = false; clearInterval(hMel); hMel = null;
+      hNodes.forEach((n) => { try { n.stop(); } catch (e) {} }); hNodes = [];
+    }, 1300);
   }
 
   return { start, setMuted, isMuted, enterScare, exitScare, typeBlip, gateStart, gateStop, shockwave, hoverIn, hoverOut };
@@ -497,9 +548,11 @@ function initOwnerFire() {
   const card = $(".owner-card"); if (!card) return;
   const canvas = $(".owner-fire", card);
   if (!canvas || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  if (matchMedia("(pointer: coarse)").matches) return;  // hover-only effect — skip on touch to save mobile
   const ctx = canvas.getContext("2d");
   let w, h, parts = [], hovering = false, raf = null, alpha = 0;
   const cols = ["255,170,60", "255,120,40", "255,210,130", "120,240,160"];
+  const sprites = glowSprites(cols, 20);
 
   function resize() {
     const r = card.getBoundingClientRect();
@@ -514,21 +567,24 @@ function initOwnerFire() {
     else if (d < W + H) { x = X + W; y = Y + (d - W); }
     else if (d < 2 * W + H) { x = X + W - (d - W - H); y = Y + H; }
     else { x = X; y = Y + H - (d - 2 * W - H); }
-    return { x, y, r: Math.random() * 2.6 + 0.8, vy: -(Math.random() * 0.8 + 0.25), vx: (Math.random() - 0.5) * 0.7, life: 1, fd: Math.random() * 0.02 + 0.012, c: cols[(Math.random() * cols.length) | 0], t: Math.random() * 6, tw: Math.random() * 0.1 + 0.05 };
+    return { x, y, r: Math.random() * 2.6 + 0.8, vy: -(Math.random() * 0.8 + 0.25), vx: (Math.random() - 0.5) * 0.7, life: 1, fd: Math.random() * 0.02 + 0.012, ci: (Math.random() * cols.length) | 0, t: Math.random() * 6, tw: Math.random() * 0.1 + 0.05 };
   }
+  let acc = 0;
   function frame() {
     ctx.clearRect(0, 0, w, h);
     alpha += ((hovering ? 1 : 0) - alpha) * 0.08;
-    if (hovering) for (let i = 0; i < 9; i++) parts.push(spawn());   // more, since the perimeter is larger
+    // emit ~4 per frame along the perimeter, capped so the list can't balloon
+    if (hovering && parts.length < 150) { acc += 4; while (acc >= 1) { parts.push(spawn()); acc -= 1; } }
     ctx.globalCompositeOperation = "lighter";
     for (let i = parts.length - 1; i >= 0; i--) {
       const p = parts[i]; p.t += p.tw; p.x += p.vx + Math.sin(p.t) * 0.3; p.y += p.vy; p.life -= p.fd;
       if (p.life <= 0) { parts.splice(i, 1); continue; }
       const a = p.life * (0.4 + Math.abs(Math.sin(p.t * 2)) * 0.6) * alpha;
-      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(${p.c},${a})`; ctx.shadowBlur = 10; ctx.shadowColor = `rgba(${p.c},0.9)`; ctx.fill();
+      const size = p.r * 6;
+      ctx.globalAlpha = a;
+      ctx.drawImage(sprites[p.ci], p.x - size / 2, p.y - size / 2, size, size);
     }
-    ctx.globalCompositeOperation = "source-over"; ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over";
     if (alpha > 0.01 || parts.length) raf = requestAnimationFrame(frame); else raf = null;
   }
   function kick() { if (!raf) { resize(); raf = requestAnimationFrame(frame); } }
