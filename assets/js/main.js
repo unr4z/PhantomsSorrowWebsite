@@ -560,7 +560,8 @@ const HoverTune = (() => {
     clearInterval(fadeTimer);
     const step = 50, n = Math.max(1, Math.round(ms / step)), start = vol; let i = 0;
     fadeTimer = setInterval(() => {
-      i++; const p = i / n, k = ease ? p * p * (3 - 2 * p) : p;   // smoothstep when easing
+      i++; const p = i / n;
+      const k = ease === "out" ? 1 - (1 - p) * (1 - p) : p;   // ease-out: rises quickly, then settles
       vol = Math.max(0, Math.min(100, start + (target - start) * k));
       if (player && ready) { try { player.setVolume(muted ? 0 : Math.round(vol)); } catch (e) {} }
       if (i >= n) { clearInterval(fadeTimer); vol = target; if (target === 0 && player && ready) { try { player.pauseVideo(); } catch (e) {} } }
@@ -569,7 +570,7 @@ const HoverTune = (() => {
   function begin() {
     if (!player || !ready) return;
     try { muted ? player.mute() : player.unMute(); player.setVolume(0); player.playVideo(); } catch (e) {}
-    vol = 0; fadeTo(TARGET, 2400, true);   // slow, eased swell so the first hover isn't abrupt
+    vol = 0; fadeTo(TARGET, 900, "out");   // quick, gentle ease-out so it's steady by the time audio buffers
   }
   return {
     // returns false only once we KNOW the embed failed, so the caller can use the synth instead
