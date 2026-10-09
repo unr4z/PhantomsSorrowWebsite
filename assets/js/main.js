@@ -526,7 +526,7 @@ const Ambience = (() => {
    Uses YouTube's own player (nothing is downloaded or re-hosted), so the track plays legitimately.
    If the video can't be embedded, we fall back to the synthesized ambient theme above.          */
 const HoverTune = (() => {
-  const VIDEO = "N2p_JFF4lR0", START = 20, TARGET = 55;   // volume 0..100
+  const VIDEO = "N2p_JFF4lR0", START = 20, TARGET = 26;   // volume 0..100 (kept gentle)
   let player = null, ready = false, failed = false, loading = false, hovering = false, fadeTimer = null, vol = 0;
   let muted = false; try { muted = localStorage.getItem("ps-muted") === "1"; } catch (e) {}
 
@@ -556,19 +556,20 @@ const HoverTune = (() => {
       });
     } catch (e) { failed = true; }
   }
-  function fadeTo(target, ms) {
+  function fadeTo(target, ms, ease) {
     clearInterval(fadeTimer);
-    const step = 50, n = Math.max(1, Math.round(ms / step)), start = vol, delta = (target - start) / n; let i = 0;
+    const step = 50, n = Math.max(1, Math.round(ms / step)), start = vol; let i = 0;
     fadeTimer = setInterval(() => {
-      i++; vol = Math.max(0, Math.min(100, start + delta * i));
+      i++; const p = i / n, k = ease ? p * p * (3 - 2 * p) : p;   // smoothstep when easing
+      vol = Math.max(0, Math.min(100, start + (target - start) * k));
       if (player && ready) { try { player.setVolume(muted ? 0 : Math.round(vol)); } catch (e) {} }
       if (i >= n) { clearInterval(fadeTimer); vol = target; if (target === 0 && player && ready) { try { player.pauseVideo(); } catch (e) {} } }
     }, step);
   }
   function begin() {
     if (!player || !ready) return;
-    try { muted ? player.mute() : player.unMute(); player.playVideo(); } catch (e) {}
-    fadeTo(TARGET, 1300);
+    try { muted ? player.mute() : player.unMute(); player.setVolume(0); player.playVideo(); } catch (e) {}
+    vol = 0; fadeTo(TARGET, 2400, true);   // slow, eased swell so the first hover isn't abrupt
   }
   return {
     // returns false only once we KNOW the embed failed, so the caller can use the synth instead
