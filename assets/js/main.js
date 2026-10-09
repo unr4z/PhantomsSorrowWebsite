@@ -527,7 +527,7 @@ const Ambience = (() => {
    If the video can't be embedded, we fall back to the synthesized ambient theme above.          */
 const HoverTune = (() => {
   const VIDEO = "N2p_JFF4lR0", START = 20, TARGET = 26;   // volume 0..100 (kept gentle)
-  let player = null, ready = false, failed = false, loading = false, hovering = false, fadeTimer = null, vol = 0;
+  let player = null, ready = false, failed = false, loading = false, hovering = false, fadeTimer = null, vol = 0, pendingFade = false;
   let muted = false; try { muted = localStorage.getItem("ps-muted") === "1"; } catch (e) {}
 
   function load() {
@@ -551,7 +551,11 @@ const HoverTune = (() => {
         events: {
           onReady: () => { ready = true; try { player.setVolume(0); muted ? player.mute() : player.unMute(); } catch (e) {} if (hovering) begin(); },
           onError: () => { failed = true; },
-          onStateChange: (e) => { if (e.data === YT.PlayerState.ENDED) { try { player.seekTo(START, true); player.playVideo(); } catch (err) {} } },
+          onStateChange: (e) => {
+            // fade in only once real playback starts (after buffering) so the fade is actually heard
+            if (e.data === YT.PlayerState.PLAYING && pendingFade && hovering) { pendingFade = false; vol = 0; fadeTo(TARGET, 1600); }
+            if (e.data === YT.PlayerState.ENDED) { try { player.seekTo(START, true); player.playVideo(); } catch (err) {} }
+          },
         },
       });
     } catch (e) { failed = true; }
@@ -569,13 +573,20 @@ const HoverTune = (() => {
   }
   function begin() {
     if (!player || !ready) return;
+    let st = -1; try { st = player.getPlayerState(); } catch (e) {}
+    if (st === 1) {                     // already playing (quick re-hover): just ramp back up smoothly
+      try { muted ? player.mute() : player.unMute(); } catch (e) {}
+      pendingFade = false; fadeTo(TARGET, 1200);
+      return;
+    }
+    // fresh start / resume: begin silent, then fade once PLAYING fires (handled in onStateChange)
     try { muted ? player.mute() : player.unMute(); player.setVolume(0); player.playVideo(); } catch (e) {}
-    vol = 0; fadeTo(TARGET, 900, "out");   // quick, gentle ease-out so it's steady by the time audio buffers
+    vol = 0; pendingFade = true;
   }
   return {
     // returns false only once we KNOW the embed failed, so the caller can use the synth instead
     enter() { hovering = true; if (failed) return false; if (!player) load(); else if (ready) begin(); return true; },
-    leave() { hovering = false; if (player && ready) fadeTo(0, 1100); },
+    leave() { hovering = false; pendingFade = false; if (player && ready) fadeTo(0, 1100); },
     setMuted(m) { muted = m; if (player && ready) { try { m ? player.mute() : (player.unMute(), player.setVolume(Math.round(vol))); } catch (e) {} } },
   };
 })();
