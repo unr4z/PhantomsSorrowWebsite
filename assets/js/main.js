@@ -522,6 +522,62 @@ const Ambience = (() => {
   return { start, setMuted, isMuted, enterScare, exitScare, typeBlip, gateStart, gateStop, shockwave, hoverIn, hoverOut };
 })();
 
+/* ---------- owner hover theme — official YouTube embed (starts at 0:20, loops, fades) ----------
+   Uses YouTube's own player (nothing is downloaded or re-hosted), so the track plays legitimately.
+   If the video can't be embedded, we fall back to the synthesized ambient theme above.          */
+const HoverTune = (() => {
+  const VIDEO = "N2p_JFF4lR0", START = 20, TARGET = 55;   // volume 0..100
+  let player = null, ready = false, failed = false, loading = false, hovering = false, fadeTimer = null, vol = 0;
+  let muted = false; try { muted = localStorage.getItem("ps-muted") === "1"; } catch (e) {}
+
+  function load() {
+    if (loading) return; loading = true;
+    if (window.YT && window.YT.Player) { create(); return; }
+    const prev = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = () => { if (prev) { try { prev(); } catch (e) {} } create(); };
+    const tag = document.createElement("script");
+    tag.src = "https://www.youtube.com/iframe_api";
+    tag.onerror = () => { failed = true; };
+    document.head.appendChild(tag);
+  }
+  function create() {
+    const host = document.createElement("div"); host.id = "ytHost";
+    host.style.cssText = "position:fixed;width:1px;height:1px;left:-9999px;top:-9999px;opacity:0;pointer-events:none;";
+    document.body.appendChild(host);
+    try {
+      player = new YT.Player(host, {
+        videoId: VIDEO,
+        playerVars: { autoplay: 0, controls: 0, disablekb: 1, fs: 0, modestbranding: 1, playsinline: 1, rel: 0, start: START },
+        events: {
+          onReady: () => { ready = true; try { player.setVolume(0); muted ? player.mute() : player.unMute(); } catch (e) {} if (hovering) begin(); },
+          onError: () => { failed = true; },
+          onStateChange: (e) => { if (e.data === YT.PlayerState.ENDED) { try { player.seekTo(START, true); player.playVideo(); } catch (err) {} } },
+        },
+      });
+    } catch (e) { failed = true; }
+  }
+  function fadeTo(target, ms) {
+    clearInterval(fadeTimer);
+    const step = 50, n = Math.max(1, Math.round(ms / step)), start = vol, delta = (target - start) / n; let i = 0;
+    fadeTimer = setInterval(() => {
+      i++; vol = Math.max(0, Math.min(100, start + delta * i));
+      if (player && ready) { try { player.setVolume(muted ? 0 : Math.round(vol)); } catch (e) {} }
+      if (i >= n) { clearInterval(fadeTimer); vol = target; if (target === 0 && player && ready) { try { player.pauseVideo(); } catch (e) {} } }
+    }, step);
+  }
+  function begin() {
+    if (!player || !ready) return;
+    try { muted ? player.mute() : player.unMute(); player.playVideo(); } catch (e) {}
+    fadeTo(TARGET, 1300);
+  }
+  return {
+    // returns false only once we KNOW the embed failed, so the caller can use the synth instead
+    enter() { hovering = true; if (failed) return false; if (!player) load(); else if (ready) begin(); return true; },
+    leave() { hovering = false; if (player && ready) fadeTo(0, 1100); },
+    setMuted(m) { muted = m; if (player && ready) { try { m ? player.mute() : (player.unMute(), player.setVolume(Math.round(vol))); } catch (e) {} } },
+  };
+})();
+
 function initAmbience() {
   const btn = $("#soundToggle");
   const paint = () => {
@@ -533,13 +589,16 @@ function initAmbience() {
   // start on first interaction (browsers block audio before a gesture)
   const kick = () => { Ambience.start(); removeEventListener("pointerdown", kick); removeEventListener("keydown", kick); };
   addEventListener("pointerdown", kick); addEventListener("keydown", kick);
-  if (btn) btn.addEventListener("click", (e) => { e.stopPropagation(); Ambience.start(); Ambience.setMuted(!Ambience.isMuted()); paint(); });
+  if (btn) btn.addEventListener("click", (e) => {
+    e.stopPropagation(); Ambience.start();
+    const m = !Ambience.isMuted(); Ambience.setMuted(m); HoverTune.setMuted(m); paint();
+  });
 
-  // owner card hover plays the Faceless Beast theme
+  // owner card hover plays the chosen theme via YouTube's embed; synth is the fallback
   const card = $(".owner-card");
   if (card) {
-    card.addEventListener("mouseenter", () => Ambience.hoverIn());
-    card.addEventListener("mouseleave", () => Ambience.hoverOut());
+    card.addEventListener("mouseenter", () => { Ambience.start(); if (!HoverTune.enter()) Ambience.hoverIn(); });
+    card.addEventListener("mouseleave", () => { HoverTune.leave(); Ambience.hoverOut(); });
   }
 }
 
