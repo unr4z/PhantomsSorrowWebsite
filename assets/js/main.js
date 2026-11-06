@@ -46,9 +46,7 @@ const data = {
     { name: "displayname", handle: "@username", role: "reason", avatar: "" },
     { name: "displayname", handle: "@username", role: "reason", avatar: "" },
   ],
-  blacklist: [
-    { name: "vko", handle: "@iive1ko", role: "Big Nerd", avatar: "assets/img/vko.png", profile: "https://www.roblox.com/users/5247801134/profile" },
-  ],
+  blacklist: [],
 
   progress: [
     { label: "Model",      pct: 100 },
@@ -114,6 +112,14 @@ function render() {
   fill("#contributors", data.contributors);
   fill("#temp-holders", data.tempHolders);
   fill("#blacklist", data.blacklist, true);
+  // hide the Blacklist band + grid entirely when no one is on it
+  const blGrid = $("#blacklist");
+  if (blGrid) {
+    const blBand = blGrid.previousElementSibling;
+    const showBl = data.blacklist.length > 0;
+    blGrid.style.display = showBl ? "" : "none";
+    if (blBand && blBand.classList.contains("band")) blBand.style.display = showBl ? "" : "none";
+  }
 
   const bars = $("#progress-bars");
   if (bars) bars.innerHTML = data.progress.map((b) =>
@@ -142,6 +148,7 @@ function initPages() {
     links.forEach((l) => l.classList.toggle("is-active", l.dataset.page === name));
     window.scrollTo({ top: 0 });
     nav.classList.remove("open"); toggle.setAttribute("aria-expanded", "false");
+    document.body.dataset.page = name;
     if (history.replaceState) history.replaceState(null, "", `#${name}`);
     reReveal(name); heroReset();
     if (name === "changelog") animateBars();
@@ -773,7 +780,7 @@ function initBlackout() {
       setTimeout(() => body.classList.remove("blackout"), 1600);
     }, 7000);
   }
-  setInterval(run, 180000); // ~3 minutes
+  setInterval(run, 360000); // ~6 minutes (slower to appear)
 }
 
 /* ---------- boot ---------- */
